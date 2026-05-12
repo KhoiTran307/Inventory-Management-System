@@ -1,0 +1,59 @@
+USE InventorySystem;
+
+-- 1. Thêm 5 Nhà cung cấp (Suppliers)
+INSERT INTO SUPPLIERS (SupplierID, SupplierName, Address, PhoneNumber) VALUES
+(1, 'Tech Source Inc.', '123 Silicon Valley, CA', '0901111111'),
+(2, 'Global Electronics', '456 Tech Park, NY', '0902222222'),
+(3, 'Vietnam Gadgets', '789 Cau Giay, Hanoi', '0903333333'),
+(4, 'Smart Home Co.', '101 District 1, HCMC', '0904444444'),
+(5, 'Future Vision', '202 Da Nang City', '0905555555');
+
+-- 2. Thêm 5 Kho hàng (Warehouses)
+INSERT INTO WAREHOUSES (WarehouseID, WarehouseName, Address) VALUES
+(1, 'Kho Mien Bac 1', 'Long Bien, Hanoi'),
+(2, 'Kho Mien Bac 2', 'Bac Ninh'),
+(3, 'Kho Mien Trung', 'Lien Chieu, Da Nang'),
+(4, 'Kho Mien Nam 1', 'Thu Duc, HCMC'),
+(5, 'Kho Mien Nam 2', 'Binh Duong');
+
+-- 3. Thêm 10 Sản phẩm (Products)
+-- Lưu ý: SupplierID phải khớp với ID ở bảng Suppliers
+INSERT INTO PRODUCTS (ProductID, ProductName, Description, UnitPrice, SupplierID) VALUES
+(101, 'Laptop Dell XPS 15', 'High-end laptop', 1500.00, 1),
+(102, 'MacBook Pro M2', 'Apple laptop', 2000.00, 2),
+(103, 'Mechanical Keyboard', 'RGB Gaming Keyboard', 100.50, 3),
+(104, 'Wireless Mouse', 'Ergonomic mouse', 45.00, 3),
+(105, 'Smart TV Samsung 65inch', '4K UHD TV', 850.00, 2),
+(106, 'iPhone 15 Pro Max', 'Apple Smartphone', 1200.00, 2),
+(107, 'Sony Headphones', 'Noise cancelling', 300.00, 1),
+(108, 'Robot Vacuum', 'Smart home cleaner', 400.00, 4),
+(109, 'Security Camera', '1080p IP Camera', 80.00, 4),
+(110, 'VR Headset', 'Virtual reality gear', 500.00, 5);
+
+-- 4. Thêm 10 Phiếu nhập kho (StockEntries)
+-- Lưu ý: ProductID phải khớp với ID ở bảng Products
+INSERT INTO STOCKENTRIES (EntryID, Quantity, EntryDate, ProductID) VALUES
+(1001, 50, '2023-10-01', 101),
+(1002, 30, '2023-10-02', 102),
+(1003, 100, '2023-10-03', 103),
+(1004, 200, '2023-10-04', 104),
+(1005, 20, '2023-10-05', 105),
+(1006, 80, '2023-10-06', 106),
+(1007, 150, '2023-10-07', 107),
+(1008, 40, '2023-10-08', 108),
+(1009, 300, '2023-10-09', 109),
+(1010, 60, '2023-10-10', 110);
+
+-- 5. Thêm 10 Lịch sử tồn kho (InventoryHistory)
+-- Thể hiện việc hàng được đưa vào các kho nào
+INSERT INTO INVENTORYHISTORY (HistoryID, Quantity, TransactionDate, ProductID, WarehouseID) VALUES
+(5001, 25, '2023-10-01', 101, 1),
+(5002, 25, '2023-10-01', 101, 4),
+(5003, 30, '2023-10-02', 102, 2),
+(5004, 50, '2023-10-03', 103, 1),
+(5005, 50, '2023-10-03', 103, 3),
+(5006, 100, '2023-10-04', 104, 4),
+(5007, 100, '2023-10-04', 104, 5),
+(5008, 20, '2023-10-05', 105, 1),
+(5009, 40, '2023-10-06', 106, 2),
+(5010, 40, '2023-10-06', 106, 4);

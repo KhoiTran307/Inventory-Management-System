@@ -1,0 +1,85 @@
+USE InventorySystem;
+
+-- ====================================================
+-- 1. INDEXES (Chỉ mục): Giúp tìm kiếm dữ liệu siêu tốc
+-- ====================================================
+CREATE INDEX idx_ProductName ON PRODUCTS(ProductName);
+CREATE INDEX idx_WarehouseID ON INVENTORYHISTORY(WarehouseID);
+
+
+-- ====================================================
+-- 2. VIEWS (Khung nhìn): Tạo các bảng báo cáo ảo
+-- ====================================================
+-- View 1: Báo cáo tổng lượng tồn kho theo từng kho hàng và sản phẩm
+CREATE VIEW vw_StockPerWarehouse AS
+SELECT w.WarehouseName, p.ProductName, SUM(ih.Quantity) AS TotalQuantity
+FROM INVENTORYHISTORY ih
+JOIN WAREHOUSES w ON ih.WarehouseID = w.WarehouseID
+JOIN PRODUCTS p ON ih.ProductID = p.ProductID
+GROUP BY w.WarehouseName, p.ProductName;
+
+-- View 2: Xem lịch sử giao hàng của các nhà cung cấp
+CREATE VIEW vw_SupplierDeliveryHistory AS
+SELECT s.SupplierName, p.ProductName, se.Quantity, se.EntryDate
+FROM STOCKENTRIES se
+JOIN PRODUCTS p ON se.ProductID = p.ProductID
+JOIN SUPPLIERS s ON p.SupplierID = s.SupplierID;
+
+
+-- ====================================================
+-- 3. STORED PROCEDURES (Thủ tục): Tự động hóa thao tác
+-- ====================================================
+DELIMITER //
+CREATE PROCEDURE sp_RestockProduct(
+    IN p_ProductID INT,
+    IN p_Quantity INT,
+    IN p_EntryDate DATE
+)
+BEGIN
+    DECLARE v_NextEntryID INT;
+    -- Tự động tính ID mới nhất để không bị trùng
+    SELECT COALESCE(MAX(EntryID), 0) + 1 INTO v_NextEntryID FROM STOCKENTRIES;
+    
+    -- Thêm dữ liệu vào bảng nhập kho
+    INSERT INTO STOCKENTRIES (EntryID, Quantity, EntryDate, ProductID)
+    VALUES (v_NextEntryID, p_Quantity, p_EntryDate, p_ProductID);
+END //
+DELIMITER ;
+
+
+-- ====================================================
+-- 4. FUNCTIONS (Hàm tự định nghĩa): Dùng để tính toán
+-- ====================================================
+-- Viết hàm tính tổng số lượng hàng đã nhập kho của một sản phẩm bất kỳ
+DELIMITER //
+CREATE FUNCTION fn_TotalProductImported(p_ProductID INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE v_Total INT;
+    SELECT SUM(Quantity) INTO v_Total 
+    FROM STOCKENTRIES 
+    WHERE ProductID = p_ProductID;
+    
+    RETURN COALESCE(v_Total, 0);
+END //
+DELIMITER ;
+
+
+-- ====================================================
+-- 5. TRIGGERS (Bẫy tự động hóa)
+-- ====================================================
+DELIMITER //
+CREATE TRIGGER trg_AfterStockEntry
+AFTER INSERT ON STOCKENTRIES
+FOR EACH ROW
+BEGIN
+    DECLARE v_NextHistoryID INT;
+    -- Lấy ID lịch sử tiếp theo
+    SELECT COALESCE(MAX(HistoryID), 0) + 1 INTO v_NextHistoryID FROM INVENTORYHISTORY;
+    
+    -- Tự động chèn vào bảng InventoryHistory
+    INSERT INTO INVENTORYHISTORY (HistoryID, Quantity, TransactionDate, ProductID, WarehouseID)
+    VALUES (v_NextHistoryID, NEW.Quantity, NEW.EntryDate, NEW.ProductID, 1);
+END //
+DELIMITER ;

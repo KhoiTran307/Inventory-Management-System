@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiTrack NEU - Smart Inventory Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-dark: #1a365d;
+            --accent-blue: #3182ce;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding-bottom: 30px;
+            color: #2d3748;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-top: 30px;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--primary-dark) !important;
+            font-size: 1.8rem;
+        }
+
+        /* Menu Tabs */
+        .nav-pills .nav-link {
+            color: #718096;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-dark);
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(26, 54, 93, 0.3);
+        }
+
+        /* Banner Cảnh báo đỏ */
+        .alert-top-banner {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.25);
+        }
+
+        /* Hover table - Fixed flickering */
+        .table-hover tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f0f7ff !important;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #4a5568;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .sticky-top {
+            top: -1px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="glass-container">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-4">
+            <div>
+                <a class="navbar-brand text-decoration-none" href="#">
+                    <i class="bi bi-boxes me-2 text-primary"></i>LOGITRACK NEU
+                </a>
+                <p class="text-muted mb-0 fw-medium">Hệ thống Quản lý & Điều phối Kho hàng</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-white text-primary border px-3 py-2 fs-6 shadow-sm">
+                    <i class="bi bi-person-circle me-1"></i> Quyền hạn: Admin
+                </span>
+            </div>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} border-0 shadow-sm mb-4 fw-bold animate__animated animate__fadeIn">
+                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if alerts %}
+        <div class="alert-top-banner p-4 mb-5">
+            <h5 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> MẶT HÀNG CẦN BỔ SUNG GẤP</h5>
+            <div class="d-flex flex-wrap gap-2">
+                {% for a in alerts %}
+                <div class="bg-white rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
+                    <span class="fw-bold text-dark me-2">[{{ a[0] }}] {{ a[1] }}</span>
+                    <span class="badge bg-danger text-white">Còn {{ a[2] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <ul class="nav nav-pills justify-content-center mb-5" id="pills-tab" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventory">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>Kiểm kê tồn kho
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-products">
+                <i class="bi bi-box-seam-fill me-2"></i>Quản lý hàng hóa
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-transactions">
+                <i class="bi bi-arrow-left-right me-2"></i>Phiếu điều chuyển
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-suppliers">
+                <i class="bi bi-people-fill me-2"></i>Danh bạ đối tác
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-history">
+                <i class="bi bi-clock-history me-2"></i>Lịch sử & Kho bãi
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          
+          <div class="tab-pane fade show active" id="tab-inventory">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold text-secondary mb-0">Báo cáo tình trạng hàng hóa theo phân khu</h5>
+                <button class="btn btn-primary btn-sm px-3 fw-bold" onclick="window.location.reload();">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Làm mới dữ liệu
+                </button>
+            </div>
+            <div class="table-responsive rounded-4 border bg-white">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="py-3 px-4">Phân khu kho</th>
+                            <th class="py-3 px-4">Tên mặt hàng</th>
+                            <th class="py-3 px-4 text-center">Đơn giá ($)</th>
+                            <th class="py-3 px-4 text-center">Số lượng tồn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in inventory %}
+                        <tr>
+                            <td class="px-4 text-muted fw-semibold">{{ row[0] }}</td>
+                            <td class="px-4 fw-bold text-dark">{{ row[1] }}</td>
+                            <td class="px-4 text-center text-success fw-bold">${{ row[2] }}</td>
+                            <td class="px-4 text-center">
+                                <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">{{ row[3] }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-products">
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="card-custom p-4 border bg-light h-100 shadow-sm">
+                        <h5 class="fw-bold mb-4 text-success"><i class="bi bi-plus-circle-fill me-2"></i>Đăng ký hàng hóa mới</h5>
+                        <form action="/add" method="POST" class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Mã hàng (ID)</label><input type="number" name="p_id" class="form-control" required></div>
+                            <div class="col-md-8"><label class="form-label">Tên sản phẩm</label><input type="text" name="p_name" class="form-control" required></div>
+                            <div class="col-12"><label class="form-label">Mô tả chi tiết</label><input type="text" name="p_desc" class="form-control" required></div>
+                            <div class="col-md-6"><label class="form-label">Giá nhập ($)</label><input type="number" step="0.01" name="p_price" class="form-control" required></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nhà cung cấp đối tác</label>
+                                <select name="p_supp" class="form-select" required>
+                                    <option value="" disabled selected>-- Chọn đối tác --</option>
+                                    {% for s in suppliers %}<option value="{{ s[0] }}">{{ s[1] }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12 mt-4"><button type="submit" class="btn btn-success w-100 py-2 fw-bold text-uppercase">Lưu kho</button></div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card-custom p-4 border bg-white h-100 shadow-sm">
+                        <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-pencil-square me-2"></i>Cập nhật thông tin</h5>
+                        <form action="/update" method="POST" class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Chọn mặt hàng</label>
+                                <select name="u_id" class="form-select" required>
+                                    <option value="" disabled selected>-- Chọn mã hàng cần sửa --</option>
+                                    {% for p in all_products %}<option value="{{ p[0] }}">ID: {{ p[0] }} - {{ p[1] }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12 text-muted small mb-1 fst-italic">* Nhập thông tin thay đổi:</div>
+                            <div class="col-12"><label class="form-label">Mô tả mới</label><input type="text" name="u_desc" class="form-control" placeholder="Để trống nếu giữ nguyên"></div>
+                            <div class="col-12"><label class="form-label">Giá mới ($)</label><input type="number" step="0.01" name="u_price" class="form-control" placeholder="Để trống nếu giữ nguyên"></div>
+                            <div class="col-12 mt-4"><button type="submit" class="btn btn-primary w-100 py-2 fw-bold text-uppercase">Cập nhật</button></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-transactions">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <div class="card-custom p-5 border bg-white shadow-lg">
+                        <h4 class="fw-bold mb-4 text-center text-dark text-uppercase">Lệnh điều chuyển hàng hóa</h4>
+                        <form action="/transaction" method="POST" class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Sản phẩm</label>
+                                <select name="t_id" class="form-select form-select-lg" required>
+                                    <option value="" disabled selected>-- Chọn sản phẩm --</option>
+                                    {% for p in all_products %}<option value="{{ p[0] }}">ID: {{ p[0] }} - {{ p[1] }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Kho xử lý</label>
+                                <select name="t_warehouse" class="form-select form-select-lg" required>
+                                    <option value="" disabled selected>-- Chọn kho --</option>
+                                    {% for w in warehouses %}<option value="{{ w[0] }}">{{ w[1] }} ({{ w[2] }})</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số lượng</label>
+                                <input type="number" name="t_qty" class="form-control form-control-lg" required min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label d-block mb-3">Loại chứng từ</label>
+                                <div class="btn-group w-100">
+                                    <input type="radio" class="btn-check" name="t_type" id="in" value="IN" checked>
+                                    <label class="btn btn-outline-success py-2 fw-bold" for="in">NHẬP (+)</label>
+                                    <input type="radio" class="btn-check" name="t_type" id="out" value="OUT">
+                                    <label class="btn btn-outline-danger py-2 fw-bold" for="out">XUẤT (-)</label>
+                                </div>
+                            </div>
+                            <div class="col-12 mt-4"><button type="submit" class="btn btn-dark w-100 py-3 fw-bold fs-5 text-uppercase">Xác nhận giao dịch</button></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-suppliers">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card-custom p-4 border bg-light h-100 shadow-sm">
+                        <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-person-plus-fill me-2"></i> Thêm đối tác</h5>
+                        <form action="/add_supplier" method="POST" class="row g-3">
+                            <div class="col-12"><label class="form-label">Tên tổ chức</label><input type="text" name="s_name" class="form-control shadow-sm" required></div>
+                            <div class="col-12"><label class="form-label">Địa chỉ</label><input type="text" name="s_address" class="form-control shadow-sm" required></div>
+                            <div class="col-12"><label class="form-label">Hotline</label><input type="text" name="s_phone" class="form-control shadow-sm" required></div>
+                            <div class="col-12 mt-4"><button type="submit" class="btn btn-primary w-100 py-2 fw-bold text-uppercase shadow-sm">Lưu danh bạ</button></div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="table-responsive rounded-4 border bg-white h-100 shadow-sm">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase">
+                                <tr><th>ID</th><th>Tên đối tác</th><th>Địa chỉ</th><th>Hotline</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for s in suppliers %}
+                                <tr><td>{{ s[0] }}</td><td class="fw-bold text-primary">{{ s[1] }}</td><td class="text-muted small">{{ s[2] }}</td><td class="fw-medium text-dark">{{ s[3] }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-history">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <h6 class="fw-bold text-secondary mb-3 text-uppercase small"><i class="bi bi-geo-alt-fill me-2"></i>Mạng lưới kho bãi</h6>
+                    <div class="table-responsive rounded-3 border bg-white shadow-sm mb-4">
+                        <table class="table align-middle mb-0 small">
+                            <thead class="table-light"><tr><th class="py-2 px-3">ID</th><th class="py-2 px-3">Tên kho</th><th class="py-2 px-3">Vị trí</th></tr></thead>
+                            <tbody>
+                                {% for w in warehouses %}
+                                <tr><td class="px-3">{{ w[0] }}</td><td class="px-3 fw-bold">{{ w[1] }}</td><td class="px-3 text-muted">{{ w[2] }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <h6 class="fw-bold text-secondary mb-3 text-uppercase small"><i class="bi bi-clock-history me-2"></i>Nhật ký giao dịch gần nhất</h6>
+                    <div class="table-responsive rounded-3 border bg-white shadow-sm" style="max-height: 450px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light sticky-top">
+                                <tr><th class="px-3">Thời gian</th><th class="px-3">Sản phẩm</th><th class="px-3">Kho</th><th class="px-3 text-center">Biến động</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for h in history %}
+                                <tr>
+                                    <td class="px-3 text-muted">{{ h[0] }}</td>
+                                    <td class="px-3 fw-bold text-dark">{{ h[1] }}</td>
+                                    <td class="px-3">{{ h[2] }}</td>
+                                    <td class="px-3 text-center">
+                                        {% if h[3] > 0 %}<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">+{{ h[3] }} Nhập</span>
+                                        {% else %}<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2">{{ h[3] }} Xuất</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+        </div> <div class="text-center mt-5 pt-4 border-top">
+            <p class="text-muted small mb-0 fw-medium">
+                &copy; Bản quyền thuộc về <strong>LogiTrack NEU</strong>. Hệ thống phục vụ Đồ án môn học Quản trị Cơ sở dữ liệu.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
