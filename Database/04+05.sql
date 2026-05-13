@@ -83,3 +83,21 @@ BEGIN
     VALUES (v_NextHistoryID, NEW.Quantity, NEW.EntryDate, NEW.ProductID, 1);
 END //
 DELIMITER ;
+-- Tạo tài khoản Admin (Quản trị viên) với toàn quyền trên hệ thống
+CREATE USER 'admin_user'@'localhost' IDENTIFIED BY 'Admin@123';
+GRANT ALL PRIVILEGES ON InventorySystem.* TO 'admin_user'@'localhost';
+
+-- Tạo tài khoản Inventory Manager (Quản lý kho)
+CREATE USER 'inv_manager'@'localhost' IDENTIFIED BY 'Manager@123';
+
+-- Phân quyền cho Manager: Được phép thêm/sửa hàng hóa và phiếu nhập
+GRANT SELECT, INSERT, UPDATE ON InventorySystem.PRODUCTS TO 'inv_manager'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON InventorySystem.STOCKENTRIES TO 'inv_manager'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON InventorySystem.INVENTORYHISTORY TO 'inv_manager'@'localhost';
+
+-- Bảo mật dữ liệu: Manager CHỈ ĐƯỢC XEM (SELECT), không được sửa/xóa thông tin Nhà cung cấp và Kho bãi
+GRANT SELECT ON InventorySystem.SUPPLIERS TO 'inv_manager'@'localhost';
+GRANT SELECT ON InventorySystem.WAREHOUSES TO 'inv_manager'@'localhost';
+
+-- Áp dụng các thay đổi phân quyền ngay lập tức
+FLUSH PRIVILEGES;
